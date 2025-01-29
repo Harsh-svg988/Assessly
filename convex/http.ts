@@ -2,6 +2,7 @@ import { httpRouter } from "convex/server";
 import {httpAction} from './_generated/server'
 import {WebhookEvent} from '@clerk/nextjs/server'
 import {Webhook} from "svix"
+import {api} from "./_generated/api"
 
  const http = httpRouter();
 
@@ -40,7 +41,32 @@ import {Webhook} from "svix"
             console.log("Error verifying webhook",err);
             return new Response("Error occurred",{status:400})
         }
-         
 
+
+        const eventType =  evt.type;
+        
+        
+        if(eventType === "user.created"){
+            const {id,email_addresses,first_name,last_name,image_url} = evt.data;
+            const email = email_addresses[0].email_address;
+            const name = `${first_name || ""} ${last_name || ""}`.trim();
+
+
+            try{
+                await ctx.runMutation(api.users.syncUser,{
+                    clerkId:id,
+                    email,
+                    name,
+                    image:image_url
+                })
+            }catch(err){
+                console.log("Error creating user",err)
+                return new Response("Error creating user",{status:400})
+    
+            }
+             return new Response ("User created succesfullly",{status:200})
+        }
+
+        
      })
  })
