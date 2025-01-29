@@ -64,8 +64,8 @@ import {api} from "./_generated/api"
                 return new Response("Error creating user",{status:400})
     
             }
-             return new Response ("User created succesfullly",{status:200})
         }
+        return new Response ("User created succesfullly",{status:200})
 
         
      })
