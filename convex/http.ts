@@ -1,3 +1,4 @@
+
 import { httpRouter } from "convex/server";
 import {httpAction} from './_generated/server'
 import {WebhookEvent} from '@clerk/nextjs/server'
@@ -66,7 +67,9 @@ import {api} from "./_generated/api"
             }
         }
         return new Response ("User created succesfullly",{status:200})
-
+        
         
      })
  })
+
+ export default http;
