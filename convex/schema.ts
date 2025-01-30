@@ -9,8 +9,27 @@ export default defineSchema({
     role: v.union(v.literal("candidate"), v.literal("interviewer")),
     clerkId: v.string(),
   }).index("by_clerk_id",["clerkId"]),
+
+  interviews: defineTable({
+    title: v.string(),
+    description: v.optional(v.string()),
+    startTime:v.number(),
+    endTime:v.optional(v.number()),
+    status:v.string(),
+    streamCallId:v.string(),
+    candidateId:v.string(),
+    interviewerIds:v.array(v.string()),
+  })
+  .index("by_candidate_id",["candidateId"])
+  .index("by_stream_call_id",["streamCallId"]),
+
+
+
 });
 
 
 
 // https://direct-robin-5.clerk.accounts.dev
+
+
+
