@@ -57,5 +57,14 @@ export const createInterview = mutation({
 
 
 export const updateInterviewStatus = mutation({
-    
+    args:{
+        id:v.id("interviews"),
+        status:v.string(),
+    },
+    handler:async(ctx,args)=>{
+        return await ctx.db.patch(args.id,{
+            status:args.status,
+            ...(args.status === "completed"?{endTime:Date.now()}:{})
+        })
+    }
 })
