@@ -1,3 +1,4 @@
+import { v } from "convex/values";
 import { query } from "./_generated/server";
 
 
@@ -21,4 +22,16 @@ export const getMyInterview = query({
         const interview = await ctx.db.query("interviews")
         .withIndex("by_candidate_id", (q)=>q.eq("candidateId",identity.subject))
     }
+})
+
+
+export const getInterviewByStreamCallId = query({
+    args:{ streamCallId:v.string()},
+    handler: async(ctx,args)=>{
+        const {streamCallId} = args;
+
+        return ctx.db.query("interviews")
+        .withIndex("by_stream_call_id", (q)=> q.eq("streamCallId",args.streamCallId))
+    }
+
 })
