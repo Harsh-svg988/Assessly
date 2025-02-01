@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { query } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 
 
 export const getAllInterviews = query({
@@ -28,10 +28,34 @@ export const getMyInterview = query({
 export const getInterviewByStreamCallId = query({
     args:{ streamCallId:v.string()},
     handler: async(ctx,args)=>{
-        const {streamCallId} = args;
 
         return ctx.db.query("interviews")
         .withIndex("by_stream_call_id", (q)=> q.eq("streamCallId",args.streamCallId))
     }
+})
 
+export const createInterview = mutation({
+    args:{
+        title: v.string(),
+        description: v.optional(v.string()),
+        startTime:v.number(),
+        status:v.string(),
+        streamCallId:v.string(),
+        candidateId:v.string(),
+        interviewerIds:v.array(v.string()),
+    },
+    handler:async(ctx,args)=>{
+        const identity = await ctx.auth.getUserIdentity();
+        if(!identity) throw new Error ("Unauthorized user");
+
+
+        return await ctx.db.insert("interviews",{
+            ...args,
+        });
+    }
+})
+
+
+export const updateInterviewStatus = mutation({
+    
 })
