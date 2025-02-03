@@ -14,7 +14,7 @@ export const getAllInterviews = query({
     }
 });
 
-export const getMyInterview = query({
+export const getMyInterviews = query({
     handler: async(ctx)=>{
         const identity = await ctx.auth.getUserIdentity();
         if(!identity) throw new Error ("Unauthorized user");
