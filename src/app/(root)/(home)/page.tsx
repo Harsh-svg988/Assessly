@@ -9,6 +9,8 @@ import Image from "next/image";
 import { useState } from "react";
 import { api } from "../../../../convex/_generated/api";
 import { useRouter } from "next/navigation";
+import Meeting from "../meeting/[id]/page";
+import MeetingModal from "@/components/MeetingModal";
 
 export default function Home() {
   const { isInterviewer, isCandidate, isLoading } = useUserRole();
@@ -31,8 +33,7 @@ export default function Home() {
         setShowModal(true);
         break;
       default:
-        router.push(`${title.toLowerCase()}`);
-
+        router.push(`/${title.toLowerCase()}`);
     }
 
 
@@ -65,6 +66,12 @@ export default function Home() {
           ))}
 
         </div>
+        <MeetingModal
+        isOpen={showModal}
+        onClose={()=>setShowModal(false)}
+        title={modalType === "join" ? "Join Meeting":"Start Meeting"}
+        isJoinMeeting = {modalType === "join"}
+        />
         </>
       ):(
         <>
