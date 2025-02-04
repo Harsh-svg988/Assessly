@@ -23,7 +23,7 @@ const useMeetingActions = ()=>{
                 }
             })
 
-            router.push(`/meeting${call.id}`);
+            router.push(`/meeting/${call.id}`);
             toast.success("Meeting created")
         }  catch (error) {
            toast.error("Failed to create a meeting")
@@ -32,6 +32,7 @@ const useMeetingActions = ()=>{
     }
 
     const joinMeeting = (callId:string)=>{
+        // console.log(callId);
         if(!client ) return toast.error("Failed to join a meeting");
         router.push(`/meeting/${callId}`);
 

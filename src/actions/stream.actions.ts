@@ -1,18 +1,19 @@
-"use server"
+"use server";
 
-import { currentUser } from "@clerk/nextjs/server"
-import { StreamClient } from "@stream-io/node-sdk"
+import { currentUser } from "@clerk/nextjs/server";
+import { StreamClient } from "@stream-io/node-sdk";
 
-export const streamTokenProvider = async()=>{
-    const user = await currentUser()
+export const streamTokenProvider = async () => {
+  const user = await currentUser();
 
-    if(!user) throw new Error("User not authenticated");
+  if (!user) throw new Error("User not authenticated");
 
-    const streamClient = new StreamClient(process.env.NEXT_PUBLIC_STREAM_API_KEY!,
-        process.env.NEXT_PUBLIC_STREAM_API_SECRET!,
-    )
+  const streamClient = new StreamClient(
+    process.env.NEXT_PUBLIC_STREAM_API_KEY!,
+    process.env.STREAM_SECRET_KEY!
+  );
 
-    const token = streamClient.generateUserToken({user_id:user.id}); // token will expiry in 1 hr
-    return token;
+  const token = streamClient.generateUserToken({ user_id: user.id });
 
-}
+  return token;
+};
