@@ -8,13 +8,14 @@ import React, { useState } from 'react'
 function MeetingPage() {
     const{id} = useParams();
     const{isLoaded} = useUser();
-
-    const isCallLoading = true;
+    
+    const {call,isCallLoading} = useGetCallById(id)
     const [isSetupComplete,setIsSetupComplete] = useState(false);
+
 
     if(!isLoaded || isCallLoading) return <LoaderUI/>
 
-    return <StreamCall>
+    return <StreamCall call={call}>
         <StreamTheme>
             {!isSetupComplete ? (
                 <MeetingSetup onSetupComplete={()=>setIsSetupComplete(true)}/>
