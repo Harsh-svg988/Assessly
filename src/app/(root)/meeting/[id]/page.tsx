@@ -1,9 +1,13 @@
 "use client"
 import LoaderUI from '@/components/LoaderUI';
+import useGetCallById from '@/hooks/useGetCallById';
 import { useUser } from '@clerk/nextjs';
 import { StreamCall, StreamTheme } from '@stream-io/video-react-sdk';
 import { useParams } from 'next/navigation';
 import React, { useState } from 'react'
+import MeetingSetup from "@/components/MeetingSetup"
+import MeetingRoom from "@/components/MeetingRoom"
+
 
 function MeetingPage() {
     const{id} = useParams();
@@ -12,8 +16,15 @@ function MeetingPage() {
     const {call,isCallLoading} = useGetCallById(id)
     const [isSetupComplete,setIsSetupComplete] = useState(false);
 
-
     if(!isLoaded || isCallLoading) return <LoaderUI/>
+
+    if(!call){
+        return (
+            <div className="h-screen flex items-center justify-center">
+              <p className="text-2xl font-semibold">Meeting not found</p>
+            </div>
+          );
+    }
 
     return <StreamCall call={call}>
         <StreamTheme>
