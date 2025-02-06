@@ -10,6 +10,7 @@ import {
     DropdownMenuTrigger,
   } from "./ui/dropdown-menu";
   import { Button } from './ui/button';
+import EndCallButton from './EndCallButton';
 
 
 function MeetingRoom() {
@@ -28,8 +29,6 @@ function MeetingRoom() {
             </div>
         )
     }
-
-
 
     return (
         <div className="h-[calc(100vh-4rem-1px)]">
@@ -80,6 +79,7 @@ function MeetingRoom() {
                         </Button>
 
                         {/* <EndCallButton /> */}
+                        <EndCallButton/>
                         </div>
                     </div>
                     </div>
