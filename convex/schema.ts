@@ -11,6 +11,7 @@ export default defineSchema({
   }).index("by_clerk_id",["clerkId"]),
 
   interviews: defineTable({
+    
     title: v.string(),
     description: v.optional(v.string()),
     startTime:v.number(),

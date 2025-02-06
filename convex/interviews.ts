@@ -31,6 +31,7 @@ export const getInterviewByStreamCallId = query({
 
         return ctx.db.query("interviews")
         .withIndex("by_stream_call_id", (q)=> q.eq("streamCallId",args.streamCallId))
+        .first()
     }
 })
 
