@@ -1,31 +1,30 @@
-import { CODING_QUESTIONS, LANGUAGES } from '@/constants'
-import React, { useState } from 'react'
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from './ui/resizable';
-import { ScrollArea } from './ui/scroll-area';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from './ui/select';
-import { BookIcon, LightbulbIcon, AlertCircleIcon } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
-import { ScrollBar } from './ui/scroll-area';
+import { CODING_QUESTIONS, LANGUAGES } from "@/constants";
+import { useState } from "react";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "./ui/resizable";
+import { ScrollArea, ScrollBar } from "./ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { AlertCircleIcon, BookIcon, LightbulbIcon } from "lucide-react";
 import Editor from "@monaco-editor/react";
 
-
 function CodeEditor() {
-    const [selectedQuestion,setSelectedQuestion] = useState(CODING_QUESTIONS[0]);
-    const [language,setLanguage] = useState<"javascript" | "python" | "java">(LANGUAGES[0].id);
-    const [code, setCode] = useState(selectedQuestion.starterCode[language]);
-    
-    const handleQuestionChange = (questionId:string)=>{
-        const question = CODING_QUESTIONS.find((q) => q.id === questionId)!;
-        setSelectedQuestion(question);
-        setCode(question.starterCode[language]);
-    }
+  const [selectedQuestion, setSelectedQuestion] = useState(CODING_QUESTIONS[0]);
+  const [language, setLanguage] = useState<"javascript" | "python" | "java">(LANGUAGES[0].id);
+  const [code, setCode] = useState(selectedQuestion.starterCode[language]);
 
-    const handleLanguageChange = (newLanguage:"javascript" | "python" | "java")=>{
-        setLanguage(newLanguage);
-        setCode(selectedQuestion.starterCode[newLanguage]);
-    }
-    return (
-        <ResizablePanelGroup direction="vertical" className="min-h-[calc-100vh-4rem-1px]">
+  const handleQuestionChange = (questionId: string) => {
+    const question = CODING_QUESTIONS.find((q) => q.id === questionId)!;
+    setSelectedQuestion(question);
+    setCode(question.starterCode[language]);
+  };
+
+  const handleLanguageChange = (newLanguage: "javascript" | "python" | "java") => {
+    setLanguage(newLanguage);
+    setCode(selectedQuestion.starterCode[newLanguage]);
+  };
+
+  return (
+    <ResizablePanelGroup direction="vertical" className="min-h-[calc-100vh-4rem-1px]">
       {/* QUESTION SECTION */}
       <ResizablePanel>
         <ScrollArea className="h-full">
@@ -45,7 +44,7 @@ function CodeEditor() {
                 </div>
                 <div className="flex items-center gap-3">
                   <Select value={selectedQuestion.id} onValueChange={handleQuestionChange}>
-                    <SelectTrigger className="w-[180px]">
+                    <SelectTrigger className="w-[200px]">
                       <SelectValue placeholder="Select question" />
                     </SelectTrigger>
                     <SelectContent>
@@ -185,7 +184,6 @@ function CodeEditor() {
         </div>
       </ResizablePanel>
     </ResizablePanelGroup>
-    )
+  );
 }
-
-export default CodeEditor
+export default CodeEditor;

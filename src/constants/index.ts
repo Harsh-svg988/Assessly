@@ -59,6 +59,7 @@ export const QUICK_ACTIONS = [
 ];
 
 export const CODING_QUESTIONS: CodeQuestion[] = [
+  
   {
     id: "two-sum",
     title: "Two Sum",
@@ -129,39 +130,38 @@ export const CODING_QUESTIONS: CodeQuestion[] = [
     },
   },
   {
-    id: "palindrome-number",
-    title: "Palindrome Number",
-    description:
-      "Given an integer `x`, return `true` if `x` is a palindrome, and `false` otherwise.\n\nAn integer is a palindrome when it reads the same forward and backward.",
-    examples: [
+    "id": "move-zeroes",
+    "title": "Move Zeroes",
+    "description": 
+      "Write a function that moves all `0`s to the end of an array while maintaining the relative order of the non-zero elements. \n\nYou must do this in-place without making a copy of the array and with O(n) time complexity.",
+    "examples": [
       {
-        input: "x = 121",
-        output: "true",
-        explanation: "121 reads as 121 from left to right and from right to left.",
+        "input": "nums = [0,1,0,3,12]",
+        "output": "[1,3,12,0,0]"
       },
       {
-        input: "x = -121",
-        output: "false",
-        explanation:
-          "From left to right, it reads -121. From right to left, it becomes 121-. Therefore it is not a palindrome.",
-      },
+        "input": "nums = [0,0,1]",
+        "output": "[1,0,0]"
+      }
     ],
-    starterCode: {
-      javascript: `function isPalindrome(x) {
+    "starterCode": {
+      "javascript": `function moveZeroes(nums) {
   // Write your solution here
   
 }`,
-      python: `def is_palindrome(x):
+      "python": `def move_zeroes(nums):
     # Write your solution here
     pass`,
-      java: `class Solution {
-    public boolean isPalindrome(int x) {
+      "java": `class Solution {
+    public void moveZeroes(int[] nums) {
         // Write your solution here
         
     }
-}`,
-    },
-  },
+}`
+    }
+}
+
+  
 ];
 
 export const LANGUAGES = [
