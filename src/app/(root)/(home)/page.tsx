@@ -54,9 +54,7 @@ export default function Home() {
             : "Access your upcoming interviews and preparations"}
         </p>
       </div>
-
-      {isInterviewer?(
-        <>
+      <>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {QUICK_ACTIONS.map((action)=>(
             <ActionCard
@@ -74,11 +72,7 @@ export default function Home() {
         isJoinMeeting = {modalType === "join"}
         />
         </>
-      ):(
-        <>
-        <div>candidate view</div>
-        </>
-      )}
+      
 
 
       </div>
