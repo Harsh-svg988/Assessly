@@ -329,5 +329,12 @@ kubectl -n monitoring port-forward svc/grafana 3333:80
   present, not that Convex/Clerk/Stream are actually reachable right now —
   a deliberate choice to avoid the probe flapping on a transient third-party
   blip that doesn't affect already-connected users.
+- **No distributed tracing**: metrics and structured logs were prioritized
+  over request-level tracing (e.g. OpenTelemetry spans across our server and
+  Convex/Clerk/Stream calls) given the time available. The
+  `assessly_external_dependency_duration_seconds` metric covers dependency
+  latency at a coarser granularity; real distributed tracing would be the
+  next thing added (Next.js supports this out of the box via `@vercel/otel`
+  in `instrumentation.ts`, exported to a Tempo/Jaeger backend).
 
 Built with ❤️ by the Harsh
