@@ -27,6 +27,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # gitleaks-action diffs between the PR base and head commits, which
+          # needs real history -- the default shallow clone only has the
+          # head commit and makes that diff fail with "unknown revision".
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
