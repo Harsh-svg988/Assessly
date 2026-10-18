@@ -99,6 +99,34 @@ browser → Ingress (nginx) → Kubernetes Service → one of the app Pods →
 Next.js Server Component → Convex (data) / Clerk (session) over HTTPS →
 response rendered and returned.
 
+```mermaid
+flowchart LR
+    U[Browser] --> ING[Ingress - nginx]
+    ING --> SVC[Service - ClusterIP]
+    SVC --> P1[Pod 1 - Next.js]
+    SVC --> P2[Pod 2 - Next.js]
+    P1 --> CLERK[Clerk - auth]
+    P1 --> CONVEX[Convex - data]
+    P1 --> STREAM[Stream - video tokens]
+    P1 -. "/api/metrics" .-> PROM[Prometheus]
+    PROM --> GRAF[Grafana]
+
+    subgraph Cluster[Kubernetes - kind]
+        ING
+        SVC
+        P1
+        P2
+        PROM
+        GRAF
+    end
+
+    subgraph External[Hosted dependencies]
+        CLERK
+        CONVEX
+        STREAM
+    end
+```
+
 ### Running locally (without Docker/Kubernetes)
 
 Prerequisites: Node.js 18+, npm, and your own Convex/Clerk/Stream dev

@@ -29,6 +29,10 @@ spec:
         {{- end }}
     spec:
       serviceAccountName: {{ include "assessly.fullname" . }}
+      {{- if .Values.imagePullSecret }}
+      imagePullSecrets:
+        - name: {{ .Values.imagePullSecret }}
+      {{- end }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:

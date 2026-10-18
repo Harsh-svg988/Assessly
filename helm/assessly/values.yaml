@@ -5,6 +5,12 @@ image:
   tag: latest
   pullPolicy: IfNotPresent
 
+# Name of a pre-existing `kubernetes.io/dockerconfigjson` Secret in the same
+# namespace, e.g. for pulling from a private GHCR repository. Empty by
+# default (not needed when the image is public or already loaded, as in the
+# local kind workflow).
+imagePullSecret: ""
+
 service:
   type: ClusterIP
   port: 80

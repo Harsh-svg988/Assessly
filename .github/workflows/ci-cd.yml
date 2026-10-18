@@ -9,11 +9,18 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  # Docker/GHCR image names must be lowercase; github.repository preserves
+  # the repo's actual casing (Harsh-svg988/Assessly), which would break the
+  # push step.
+  IMAGE_NAME: harsh-svg988/assessly
 
 permissions:
   contents: read
   packages: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   lint-and-build:
@@ -118,12 +125,22 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Create namespace and GHCR pull secret
+        run: |
+          kubectl create namespace assessly --dry-run=client -o yaml | kubectl apply -f -
+          kubectl create secret docker-registry ghcr-pull \
+            -n assessly \
+            --docker-server=${{ env.REGISTRY }} \
+            --docker-username=${{ github.actor }} \
+            --docker-password=${{ secrets.GITHUB_TOKEN }}
+
       - name: Deploy with Helm
         run: |
           helm upgrade --install assessly ./helm/assessly \
-            --create-namespace -n assessly \
+            -n assessly \
             --set image.repository=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }} \
             --set image.tag=${{ needs.docker-build-scan-push.outputs.image_tag }} \
+            --set imagePullSecret=ghcr-pull \
             --set ingress.enabled=false \
             --set secrets.CLERK_SECRET_KEY="${{ secrets.CLERK_SECRET_KEY }}" \
             --set secrets.CONVEX_DEPLOYMENT="${{ secrets.CONVEX_DEPLOYMENT }}" \
@@ -131,17 +148,6 @@ jobs:
             --set config.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}" \
             --set config.NEXT_PUBLIC_CONVEX_URL="${{ secrets.NEXT_PUBLIC_CONVEX_URL }}" \
             --set config.NEXT_PUBLIC_STREAM_API_KEY="${{ secrets.NEXT_PUBLIC_STREAM_API_KEY }}"
-
-      - name: Create GHCR pull secret
-        run: |
-          kubectl create secret docker-registry ghcr-pull \
-            -n assessly \
-            --docker-server=${{ env.REGISTRY }} \
-            --docker-username=${{ github.actor }} \
-            --docker-password=${{ secrets.GITHUB_TOKEN }}
-          kubectl patch serviceaccount assessly -n assessly \
-            -p '{"imagePullSecrets": [{"name": "ghcr-pull"}]}'
-          kubectl rollout restart deployment/assessly -n assessly
 
       - name: Wait for rollout
         run: kubectl -n assessly rollout status deployment/assessly --timeout=180s
