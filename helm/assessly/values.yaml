@@ -1,0 +1,75 @@
+replicaCount: 2
+
+image:
+  repository: ghcr.io/harsh-svg988/assessly
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 3000
+
+ingress:
+  enabled: true
+  className: nginx
+  host: assessly.local
+  annotations: {}
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
+
+probes:
+  liveness:
+    path: /api/health
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    failureThreshold: 3
+  readiness:
+    path: /api/ready
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    failureThreshold: 3
+
+networkPolicy:
+  enabled: true
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  fsGroup: 1001
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+# Non-secret, public config. NEXT_PUBLIC_* values are already shipped to the
+# browser by Next.js convention, so they are not sensitive, but we still keep
+# them out of defaults here and supply them per-environment at install time
+# (see values.secret.yaml.example) alongside the real secrets, for one
+# consistent "how do I configure this" story.
+config: {}
+
+# Real values are supplied at install/CI time via `-f values.secret.yaml`
+# (gitignored locally) or `--set` from CI secrets — never committed.
+# See values.secret.yaml.example for the expected keys.
+secrets: {}
+
+metrics:
+  enabled: true
+  path: /api/metrics
+  port: 3000

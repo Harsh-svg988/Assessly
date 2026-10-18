@@ -1,0 +1,186 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main, devops/improvements]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  lint-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      - name: Next.js build (compile + type-check)
+        run: npm run build
+        env:
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_CONVEX_URL: ${{ secrets.NEXT_PUBLIC_CONVEX_URL }}
+          NEXT_PUBLIC_STREAM_API_KEY: ${{ secrets.NEXT_PUBLIC_STREAM_API_KEY }}
+
+      - name: Secret scan (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  docker-build-scan-push:
+    needs: lint-and-build
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.meta.outputs.sha_tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: meta
+        run: echo "sha_tag=sha-${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build image (load locally for scanning)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: assessly:ci-scan
+          build-args: |
+            NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+            NEXT_PUBLIC_CONVEX_URL=${{ secrets.NEXT_PUBLIC_CONVEX_URL }}
+            NEXT_PUBLIC_STREAM_API_KEY=${{ secrets.NEXT_PUBLIC_STREAM_API_KEY }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Scan image for vulnerabilities (Trivy)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: assessly:ci-scan
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
+
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push image (sha tag, traceable to this commit)
+        if: github.event_name != 'pull_request'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.sha_tag }}
+          build-args: |
+            NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+            NEXT_PUBLIC_CONVEX_URL=${{ secrets.NEXT_PUBLIC_CONVEX_URL }}
+            NEXT_PUBLIC_STREAM_API_KEY=${{ secrets.NEXT_PUBLIC_STREAM_API_KEY }}
+          cache-from: type=gha
+
+  integration-deploy:
+    needs: docker-build-scan-push
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create kind cluster
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: assessly-ci
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy with Helm
+        run: |
+          helm upgrade --install assessly ./helm/assessly \
+            --create-namespace -n assessly \
+            --set image.repository=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }} \
+            --set image.tag=${{ needs.docker-build-scan-push.outputs.image_tag }} \
+            --set ingress.enabled=false \
+            --set secrets.CLERK_SECRET_KEY="${{ secrets.CLERK_SECRET_KEY }}" \
+            --set secrets.CONVEX_DEPLOYMENT="${{ secrets.CONVEX_DEPLOYMENT }}" \
+            --set secrets.STREAM_SECRET_KEY="${{ secrets.STREAM_SECRET_KEY }}" \
+            --set config.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}" \
+            --set config.NEXT_PUBLIC_CONVEX_URL="${{ secrets.NEXT_PUBLIC_CONVEX_URL }}" \
+            --set config.NEXT_PUBLIC_STREAM_API_KEY="${{ secrets.NEXT_PUBLIC_STREAM_API_KEY }}"
+
+      - name: Create GHCR pull secret
+        run: |
+          kubectl create secret docker-registry ghcr-pull \
+            -n assessly \
+            --docker-server=${{ env.REGISTRY }} \
+            --docker-username=${{ github.actor }} \
+            --docker-password=${{ secrets.GITHUB_TOKEN }}
+          kubectl patch serviceaccount assessly -n assessly \
+            -p '{"imagePullSecrets": [{"name": "ghcr-pull"}]}'
+          kubectl rollout restart deployment/assessly -n assessly
+
+      - name: Wait for rollout
+        run: kubectl -n assessly rollout status deployment/assessly --timeout=180s
+
+      - name: Smoke test through the service (real request path)
+        run: |
+          kubectl -n assessly port-forward svc/assessly 8080:80 &
+          sleep 5
+          set -e
+          echo "-- homepage --"
+          curl -sf -o /dev/null -w "%{http_code}\n" http://localhost:8080/
+          echo "-- liveness --"
+          curl -sf -o /dev/null -w "%{http_code}\n" http://localhost:8080/api/health
+          echo "-- readiness --"
+          curl -sf -o /dev/null -w "%{http_code}\n" http://localhost:8080/api/ready
+
+      - name: Dump pod state on failure
+        if: failure()
+        run: |
+          kubectl -n assessly get pods -o wide
+          kubectl -n assessly describe pods
+          kubectl -n assessly logs -l app.kubernetes.io/name=assessly --tail=100
+
+  promote:
+    needs: [docker-build-scan-push, integration-deploy]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: Production
+    steps:
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Promote validated image to stable + latest
+        run: |
+          docker buildx imagetools create \
+            -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:stable \
+            -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.docker-build-scan-push.outputs.image_tag }}
