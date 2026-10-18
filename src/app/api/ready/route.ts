@@ -1,4 +1,7 @@
 import { NextResponse } from "next/server";
+import { recordHttpRequest } from "@/lib/metrics";
+
+export const dynamic = "force-dynamic";
 
 const REQUIRED_ENV = [
   "NEXT_PUBLIC_CONVEX_URL",
@@ -13,7 +16,11 @@ const REQUIRED_ENV = [
 // check rather than live outbound calls so readiness doesn't flap on a
 // transient third-party blip that doesn't actually affect served traffic.
 export async function GET() {
+  const start = Date.now();
   const missing = REQUIRED_ENV.filter((key) => !process.env[key]);
+  const status = missing.length > 0 ? 503 : 200;
+
+  recordHttpRequest("/api/ready", status, (Date.now() - start) / 1000);
 
   if (missing.length > 0) {
     return NextResponse.json(

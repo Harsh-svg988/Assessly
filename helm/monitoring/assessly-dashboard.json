@@ -1,0 +1,74 @@
+{
+  "title": "Assessly - Health & Performance",
+  "uid": "assessly-overview",
+  "timezone": "browser",
+  "schemaVersion": 36,
+  "version": 1,
+  "refresh": "10s",
+  "time": { "from": "now-15m", "to": "now" },
+  "panels": [
+    {
+      "title": "Pods Up",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+      "targets": [
+        { "expr": "sum(up{job=~\".*assessly.*\"})", "legendFormat": "up" }
+      ]
+    },
+    {
+      "title": "HTTP Request Rate (by route)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 6, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(rate(assessly_http_requests_total[1m])) by (route, status)",
+          "legendFormat": "{{route}} [{{status}}]"
+        }
+      ]
+    },
+    {
+      "title": "Request Duration p95 (by route)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(assessly_http_request_duration_seconds_bucket[5m])) by (le, route))",
+          "legendFormat": "{{route}} p95"
+        }
+      ]
+    },
+    {
+      "title": "External Dependency Latency p95",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(assessly_external_dependency_duration_seconds_bucket[5m])) by (le, dependency, operation))",
+          "legendFormat": "{{dependency}}.{{operation}}"
+        }
+      ]
+    },
+    {
+      "title": "Process Memory (RSS)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "targets": [
+        {
+          "expr": "assessly_process_resident_memory_bytes",
+          "legendFormat": "{{instance}}"
+        }
+      ]
+    },
+    {
+      "title": "Process CPU Usage",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "targets": [
+        {
+          "expr": "rate(assessly_process_cpu_seconds_total[1m])",
+          "legendFormat": "{{instance}}"
+        }
+      ]
+    }
+  ]
+}

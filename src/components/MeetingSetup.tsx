@@ -12,19 +12,21 @@ function MeetingSetup({onSetupComplete}:{onSetupComplete:()=>void}) {
     const[isMicDisabled,setIsMicDisabled] = useState(false);
 
     const call = useCall();
-    if(!call) return null
 
+    useEffect(() => {
+      if (!call) return;
+      if (isCameraDisabled) call.camera.disable();
+      else call.camera.enable();
+    }, [isCameraDisabled, call]);
 
-      useEffect(() => {
-        if (isCameraDisabled) call.camera.disable();
-        else call.camera.enable();
-      }, [isCameraDisabled, call.camera]);
-    
-      useEffect(() => {
-        if (isMicDisabled) call.microphone.disable();
-        else call.microphone.enable();
-      }, [isMicDisabled, call.microphone]);
-    
+    useEffect(() => {
+      if (!call) return;
+      if (isMicDisabled) call.microphone.disable();
+      else call.microphone.enable();
+    }, [isMicDisabled, call]);
+
+    if (!call) return null;
+
     const handleJoin = async()=>{
         await call.join()
         onSetupComplete()

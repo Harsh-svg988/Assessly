@@ -22,6 +22,11 @@ spec:
         {{- include "assessly.selectorLabels" . | nindent 8 }}
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- if .Values.metrics.enabled }}
+        prometheus.io/scrape: "true"
+        prometheus.io/path: {{ .Values.metrics.path }}
+        prometheus.io/port: {{ .Values.metrics.port | quote }}
+        {{- end }}
     spec:
       serviceAccountName: {{ include "assessly.fullname" . }}
       securityContext:

@@ -2,9 +2,10 @@
 
 import { currentUser } from "@clerk/nextjs/server";
 import { StreamClient } from "@stream-io/node-sdk";
+import { timeExternalCall } from "@/lib/metrics";
 
 export const streamTokenProvider = async () => {
-  const user = await currentUser();
+  const user = await timeExternalCall("clerk", "currentUser", () => currentUser());
 
   if (!user) throw new Error("User not authenticated");
 
