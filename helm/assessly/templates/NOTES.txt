@@ -1,0 +1,19 @@
+Assessly has been deployed.
+
+Check rollout status:
+  kubectl rollout status deployment/{{ include "assessly.fullname" . }}
+
+{{- if .Values.ingress.enabled }}
+Add this to /etc/hosts if using a local cluster (kind/minikube):
+  127.0.0.1 {{ .Values.ingress.host }}
+
+Then visit:
+  http://{{ .Values.ingress.host }}
+{{- else }}
+Port-forward to reach the app:
+  kubectl port-forward svc/{{ include "assessly.fullname" . }} 8080:{{ .Values.service.port }}
+{{- end }}
+
+Health check:
+  curl http://{{ .Values.ingress.host }}/api/health
+  curl http://{{ .Values.ingress.host }}/api/ready
