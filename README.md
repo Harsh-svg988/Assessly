@@ -285,7 +285,14 @@ kubectl -n monitoring port-forward svc/grafana 3333:80
   repository secrets, injected via `--set` at deploy time, never written to
   disk or logged.
 - **Image scanning**: Trivy scans every built image in CI for CRITICAL/HIGH
-  vulnerabilities (fails the pipeline on a hit).
+  vulnerabilities and fails the pipeline on anything new/unreviewed. The
+  runtime image also strips the npm CLI and its bundled deps (`tar`,
+  `pacote`, `sigstore`, `cross-spawn`, ...) since the standalone server only
+  needs the `node` binary, and runs `apk upgrade` to pick up patched OS
+  packages — together these cleared 26 of the 38 findings Trivy originally
+  reported. The remaining 12 (all Next.js/PostCSS CVEs needing the same
+  Next 16 bump discussed above) are listed in `.trivyignore`, each with a
+  reason — anything not explicitly listed there still fails the build.
 - **Secret scanning**: gitleaks runs in CI on every push; a full-history scan
   of this repo (`gitleaks detect --log-opts="--all"`) found no leaked
   secrets.

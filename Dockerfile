@@ -32,6 +32,13 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
+# Patch OS packages (picks up fixed openssl etc.) and drop the npm CLI and its
+# own bundled dependencies (tar, pacote, sigstore, cross-spawn, ...) — the
+# standalone server only needs the `node` binary at runtime, not npm itself,
+# so shipping it is pure unused attack surface.
+RUN apk upgrade --no-cache \
+  && rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
+
 RUN addgroup --system --gid 1001 nodejs \
   && adduser --system --uid 1001 nextjs
 
